@@ -1,0 +1,34 @@
+{
+  "name": "spendwise-enterprise-testing-suite",
+  "version": "1.0.0",
+  "description": "Comprehensive E2E, Web, Load, and Vulnerability Test Automation Framework with AI-Assisted Smart Testing & Multi-Report Artifacts",
+  "main": "index.js",
+  "scripts": {
+    "test:mobile": "mocha \"src/tests/mobile/**/*.test.js\" --timeout 180000 --reporter mochawesome --reporter-options reportDir=reports/mochawesome,reportFilename=mobile-report,html=true,json=true",
+    "test:web": "mocha \"src/tests/web/**/*.test.js\" --timeout 120000 --reporter mochawesome --reporter-options reportDir=reports/mochawesome,reportFilename=web-report,html=true,json=true",
+    "test:load": "node src/tests/load/loadTestRunner.js",
+    "test:security": "node src/tests/security/vulnerabilityScanner.js",
+    "test:ai-smart": "mocha \"src/tests/mobile/aiSmartDiscovery.e2e.test.js\" --timeout 240000",
+    "test:all": "npm run test:mobile && npm run test:web && npm run test:load && npm run test:security",
+    "generate:reports": "node src/utils/generateAllReports.js"
+  },
+  "dependencies": {
+    "appium": "^2.11.0",
+    "chai": "^4.3.10",
+    "chalk": "^4.1.2",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "fs-extra": "^11.2.0",
+    "mocha": "^10.4.0",
+    "mochawesome": "^7.1.3",
+    "mochawesome-report-generator": "^6.2.0",
+    "selenium-webdriver": "^4.20.0",
+    "webdriverio": "^8.38.0",
+    "winston": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.3.16",
+    "@types/mocha": "^10.0.6",
+    "@types/selenium-webdriver": "^4.1.22"
+  }
+}
