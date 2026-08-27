@@ -1,0 +1,65 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.admin == true ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    // User document & subcollections
+    match /users/{userId} {
+      // Normal user can read own doc; Admin can read all user docs
+      allow read: if isOwner(userId) || isAdmin();
+
+      // Normal users can only register with role 'user'
+      allow create: if isOwner(userId) &&
+        (!('role' in request.resource.data) || request.resource.data.role == 'user');
+
+      // Normal users cannot elevate their role to admin; only admin can modify roles
+      allow update: if (
+        isOwner(userId) && (
+          !('role' in request.resource.data) ||
+          request.resource.data.role == resource.data.role
+        )
+      ) || isAdmin();
+
+      // Only administrators can delete a user record
+      allow delete: if isAdmin();
+
+      // Subcollection: importHistory (Smart Import session logs)
+      match /importHistory/{importId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create, update, delete: if isOwner(userId);
+      }
+
+      // Subcollection: aiConversations (SpendWise AI persistent history)
+      match /aiConversations/{conversationId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Other subcollections: expenses, incomes, budgets, savingsGoals, recurringExpenses, notifications, insights
+      match /{allSubcollections=**} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // Platform-wide AI Analytics (Admin aggregate stats)
+    match /aiAnalytics/{docId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpendWise — Admin Control Hub & Operations Portal</title>
+    <meta name="description" content="Dedicated administrative operations, platform monitoring, user management, and security governance for SpendWise.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Firebase Web SDK (v10 Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="alternate icon" href="favicon.svg">
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <!-- Admin Authentication Guard Overlay (Displayed when not signed in as Admin) -->
+    <div class="admin-auth-overlay" id="admin-auth-guard">
+        <div class="admin-auth-card">
+            <div class="admin-auth-header">
+                <img src="logo-icon.svg" alt="SpendWise Admin" class="auth-logo-img">
+                <h2>SpendWise Admin</h2>
+                <p>Enterprise Operations & Platform Administration</p>
+            </div>
+
+            <form id="admin-login-form" class="admin-login-form">
+                <div class="form-group">
+                    <label for="admin-email">Administrator Email</label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-envelope input-prefix-icon"></i>
+                        <input type="email" id="admin-email" required placeholder="admin@spendwise.app" autocomplete="email">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="admin-password">Password</label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-lock input-prefix-icon"></i>
+                        <input type="password" id="admin-password" required placeholder="••••••••" autocomplete="current-password">
+                        <button type="button" class="btn-toggle-pwd" data-target="admin-password" title="Toggle password visibility">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="admin-auth-error" class="auth-error-text" style="display:none;"></div>
+                <button type="submit" class="btn btn-primary w-100" id="btn-admin-login">
+                    <span class="btn-text"><i class="fa-solid fa-key"></i> Authenticate & Enter Portal</span>
+                    <div class="btn-spinner" style="display:none;"><div class="spinner-small"></div></div>
+                </button>
+                <div class="admin-security-note">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>Restricted area. All authorization attempts and administrative activities are securely verified and logged.</span>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="index.html" class="btn-link" style="font-size:0.85rem;">
+                        <i class="fa-solid fa-arrow-left"></i> Return to Main Application
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Application Shell (Visible only to authorized Admins) -->
+    <div class="app-container" id="admin-app-shell" style="display:none;">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar admin-sidebar">
+            <div class="brand">
+                <img src="logo-icon.svg" alt="SpendWise Admin" class="brand-logo-img">
+                <div class="brand-text">
+                    <h1>SpendWise</h1>
+                    <span class="admin-badge"><i class="fa-solid fa-lock"></i> ADMIN PANEL</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-link active" data-tab="overview">
+                    <i class="fa-solid fa-gauge-high"></i>
+                    <span>Overview</span>
+                </button>
+                <button class="nav-link" data-tab="users">
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>User Management</span>
+                    <span class="badge-pill" id="total-users-badge">0</span>
+                </button>
+                <button class="nav-link" data-tab="transactions">
+                    <i class="fa-solid fa-money-bill-transfer"></i>
+                    <span>Transactions</span>
+                </button>
+                <button class="nav-link" data-tab="analytics">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Financial Analytics</span>
+                </button>
+                <button class="nav-link" data-tab="import-analytics">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span>Import Analytics</span>
+                    <span class="badge-pill" id="total-imports-badge">0</span>
+                </button>
+                <button class="nav-link" data-tab="ai-analytics">
+                    <i class="fa-solid fa-wand-magic-sparkles text-primary"></i>
+                    <span>AI Analytics</span>
+                    <span class="badge-pill" id="total-ai-badge">AI</span>
+                </button>
+                <button class="nav-link" data-tab="reports">
+                    <i class="fa-solid fa-file-shield"></i>
+                    <span>Reports & Export</span>
+                </button>
+                <button class="nav-link" data-tab="security">
+                    <i class="fa-solid fa-shield-check"></i>
+                    <span>Security & Audit</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="theme-switch-container">
+                    <span class="theme-label"><i class="fa-solid fa-moon"></i> Dark Mode</span>
+                    <label class="switch">
+                        <input type="checkbox" id="admin-theme-toggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="user-profile-badge">
+                    <div class="avatar admin-avatar">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name" id="admin-display-name">Admin</span>
+                        <span class="user-email" id="admin-display-email">admin@spendwise.app</span>
+                    </div>
+                    <button class="btn-logout-icon" id="btn-admin-logout" title="Sign Out">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header Bar -->
+            <header class="top-header">
+                <div class="header-title">
+                    <h2 id="admin-page-title">Platform Overview & Statistics</h2>
+                    <p id="admin-page-subtitle">Real-time telemetry and aggregated analytics across SpendWise</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary btn-sm" id="btn-refresh-data" title="Refresh Firestore Data">
+                        <i class="fa-solid fa-arrows-rotate"></i> Refresh Data
+                    </button>
+                    <a href="index.html" class="btn btn-secondary btn-sm" title="View User Dashboard">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> User App
+                    </a>
+                </div>
+            </header>
+
+            <!-- TAB 1: OVERVIEW -->
+            <section class="tab-pane active" id="tab-overview">
+                <!-- KPI Cards Grid -->
+                <div class="kpi-grid">
+                    <div class="kpi-card kpi-primary">
+                        <div class="kpi-icon"><i class="fa-solid fa-users"></i></div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Total Registered Users</span>
+                            <h3 class="kpi-value" id="kpi-total-users">0</h3>
+                            <span class="kpi-subtext" id="kpi-active-users">0 active users</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card kpi-emerald">
+                        <div class="kpi-icon"><i class="fa-solid fa-arrow-down"></i></div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Total Platform Income</span>
+                            <h3 class="kpi-value" id="kpi-total-income">₹0.00</h3>
+                            <span class="kpi-subtext">Across all accounts</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card kpi-rose">
+                        <div class="kpi-icon"><i class="fa-solid fa-arrow-up"></i></div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Total Platform Expenses</span>
+                            <h3 class="kpi-value" id="kpi-total-expenses">₹0.00</h3>
+                            <span class="kpi-subtext">Across all accounts</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card kpi-purple">
+                        <div class="kpi-icon"><i class="fa-solid fa-receipt"></i></div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Total Transactions</span>
+                            <h3 class="kpi-value" id="kpi-total-tx">0</h3>
+                            <span class="kpi-subtext">Income & Expense records</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card kpi-amber">
+                        <div class="kpi-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Active Budgets</span>
+                            <h3 class="kpi-value" id="kpi-total-budgets">0</h3>
+                            <span class="kpi-subtext">Monthly limits defined</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card kpi-blue">
+                        <div class="kpi-icon"><i class="fa-solid fa-bullseye"></i></div>
+                        <div class="kpi-content">
+                            <span class="kpi-label">Savings Goals</span>
+                            <h3 class="kpi-value" id="kpi-total-goals">0</h3>
+                            <span class="kpi-subtext">Target milestones tracked</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="dashboard-charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <h3><i class="fa-solid fa-chart-column"></i> Platform Financial Flow</h3>
+                            <span class="badge-pill">Aggregated Data</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="adminFlowChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <h3><i class="fa-solid fa-chart-pie"></i> Top Platform Expense Categories</h3>
+                            <span class="badge-pill">Distribution</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="adminCategoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Registrations & Summary -->
+                <div class="content-card mt-4">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-clock-rotate-left"></i> Recently Registered Users</h3>
+                        <button class="btn btn-secondary btn-sm" onclick="switchAdminTab('users')">View All Users</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>User Name</th>
+                                    <th>Email</th>
+                                    <th>Currency</th>
+                                    <th>Monthly Income</th>
+                                    <th>Role</th>
+                                    <th>Created Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-recent-users-tbody">
+                                <tr><td colspan="7" class="text-center text-muted">Loading user accounts...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: USER MANAGEMENT -->
+            <section class="tab-pane" id="tab-users">
+                <div class="content-card">
+                    <div class="card-header user-mgmt-header">
+                        <div class="search-filter-box">
+                            <div class="search-input-wrapper">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="user-search-input" placeholder="Search by name, email, or UID...">
+                            </div>
+                            <div class="filter-pills">
+                                <button class="filter-pill active" data-filter="all">All (<span id="count-all-users">0</span>)</button>
+                                <button class="filter-pill" data-filter="admin">Admins (<span id="count-admin-users">0</span>)</button>
+                                <button class="filter-pill" data-filter="user">Normal Users (<span id="count-normal-users">0</span>)</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Email Address</th>
+                                    <th>UID</th>
+                                    <th>Currency</th>
+                                    <th>Role</th>
+                                    <th>Registered</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-all-users-tbody">
+                                <tr><td colspan="8" class="text-center text-muted">Loading user database...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: TRANSACTIONS MONITOR -->
+            <section class="tab-pane" id="tab-transactions">
+                <div class="content-card">
+                    <div class="card-header user-mgmt-header">
+                        <div class="search-filter-box">
+                            <div class="search-input-wrapper">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="tx-search-input" placeholder="Search description, category, or user...">
+                            </div>
+                            <div class="filter-pills">
+                                <button class="filter-pill active" data-tx-filter="all">All</button>
+                                <button class="filter-pill" data-tx-filter="Expense">Expenses</button>
+                                <button class="filter-pill" data-tx-filter="Income">Incomes</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Category</th>
+                                    <th>Description / Merchant</th>
+                                    <th>Payment Method</th>
+                                    <th>User Account</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-all-tx-tbody">
+                                <tr><td colspan="7" class="text-center text-muted">Loading transaction records...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: FINANCIAL ANALYTICS -->
+            <section class="tab-pane" id="tab-analytics">
+                <div class="analytics-metrics-row">
+                    <div class="analytic-box">
+                        <span class="an-label">Platform Gross Income</span>
+                        <strong class="an-value text-emerald" id="an-gross-income">₹0.00</strong>
+                    </div>
+                    <div class="analytic-box">
+                        <span class="an-label">Platform Gross Expenditure</span>
+                        <strong class="an-value text-rose" id="an-gross-expense">₹0.00</strong>
+                    </div>
+                    <div class="analytic-box">
+                        <span class="an-label">Net Platform Savings</span>
+                        <strong class="an-value text-primary" id="an-net-savings">₹0.00</strong>
+                    </div>
+                    <div class="analytic-box">
+                        <span class="an-label">Savings Ratio</span>
+                        <strong class="an-value" id="an-savings-ratio">0.0%</strong>
+                    </div>
+                </div>
+
+                <div class="dashboard-charts-grid mt-4">
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <h3><i class="fa-solid fa-chart-area"></i> Monthly Income vs Expense Trend</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="adminTrendChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <h3><i class="fa-solid fa-coins"></i> User Currencies Breakdown</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="adminCurrencyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: SMART IMPORT ANALYTICS -->
+            <section class="tab-pane" id="tab-import-analytics">
+                <div class="analytics-metrics-row" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+                    <div class="analytic-box">
+                        <span class="an-label">Total Imports</span>
+                        <strong class="an-value text-indigo" id="admin-import-total-count">0</strong>
+                    </div>
+                    <div class="analytic-box">
+                        <span class="an-label">Transactions Imported</span>
+                        <strong class="an-value text-emerald" id="admin-import-tx-count">0</strong>
+                    </div>
+                    <div class="analytic-box">
+                        <span class="an-label">Duplicates Prevented</span>
+                        <strong class="an-value text-muted" id="admin-import-dup-count">0</strong>
+                    </div>
+                    <div class="analytic-box">
+                        <span class="an-label">Needs Review</span>
+                        <strong class="an-value text-amber" id="admin-import-rev-count">0</strong>
+                    </div>
+                    <div class="analytic-box">
+                        <span class="an-label">CSV / Excel Files</span>
+                        <strong class="an-value text-sky" id="admin-import-file-count">0</strong>
+                    </div>
+                    <div class="analytic-box">
+                        <span class="an-label">Receipt / Voice</span>
+                        <strong class="an-value text-primary" id="admin-import-scan-count">0</strong>
+                    </div>
+                </div>
+
+                <div class="content-card" style="margin-top: 24px;">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-cloud-arrow-up text-primary"></i> Global Smart Import Ledger</h3>
+                        <p class="card-desc">System-wide audit trail of transaction import batches and duplicate prevention across users</p>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Import Session</th>
+                                    <th>Source Type</th>
+                                    <th>User Account ID</th>
+                                    <th>Total Records</th>
+                                    <th>Imported</th>
+                                    <th>Duplicates</th>
+                                    <th>Needs Review</th>
+                                    <th>Status</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-import-history-tbody">
+                                <tr><td colspan="9" class="text-center text-muted">Loading import records...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: AI ANALYTICS & GOVERNANCE -->
+            <section class="tab-pane" id="tab-ai-analytics">
+                <!-- Top Key Metrics -->
+                <div class="analytics-metrics-row" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                    <div class="analytic-box">
+                        <span class="an-label">Total AI Requests</span>
+                        <strong class="an-value text-indigo" id="admin-ai-total-reqs">0</strong>
+                    </div>
+                    <div class="analytic-box">
+                        <span class="an-label">Successful Requests</span>
+                        <strong class="an-value text-emerald" id="admin-ai-success-reqs">0</strong>
+                    </div>
+                    <div class="analytic-box">
+                        <span class="an-label">Failed Requests</span>
+                        <strong class="an-value text-rose" id="admin-ai-failed-reqs">0</strong>
+                    </div>
+                    <div class="analytic-box">
+                        <span class="an-label">Avg Response Time</span>
+                        <strong class="an-value text-sky" id="admin-ai-avg-latency">0 ms</strong>
+                    </div>
+                    <div class="analytic-box">
+                        <span class="an-label">Most Used AI Feature</span>
+                        <strong class="an-value text-amber" id="admin-ai-top-feature">Assistant Chat</strong>
+                    </div>
+                </div>
+
+                <!-- Feature Breakdown Grid -->
+                <div class="content-card" style="margin-top: 24px;">
+                    <div class="card-header">
+                        <div>
+                            <h3><i class="fa-solid fa-wand-magic-sparkles text-primary"></i> AI Feature Utilization Breakdown</h3>
+                            <p class="card-desc">Aggregated usage metrics across all SpendWise financial intelligence modules</p>
+                        </div>
+                    </div>
+
+                    <div class="admin-ai-features-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 16px;">
+                        <div class="analytic-box">
+                            <span class="an-label"><i class="fa-solid fa-comments text-primary"></i> Assistant Chat</span>
+                            <strong class="an-value" id="ai-count-chat">0</strong>
+                        </div>
+                        <div class="analytic-box">
+                            <span class="an-label"><i class="fa-solid fa-chart-pie text-emerald"></i> Spending Analysis</span>
+                            <strong class="an-value" id="ai-count-analysis">0</strong>
+                        </div>
+                        <div class="analytic-box">
+                            <span class="an-label"><i class="fa-solid fa-scale-balanced text-sky"></i> Budget Recommendations</span>
+                            <strong class="an-value" id="ai-count-budgets">0</strong>
+                        </div>
+                        <div class="analytic-box">
+                            <span class="an-label"><i class="fa-solid fa-bullseye text-amber"></i> Savings Planner</span>
+                            <strong class="an-value" id="ai-count-savings">0</strong>
+                        </div>
+                        <div class="analytic-box">
+                            <span class="an-label"><i class="fa-solid fa-triangle-exclamation text-rose"></i> Anomaly Detection</span>
+                            <strong class="an-value" id="ai-count-anomalies">0</strong>
+                        </div>
+                        <div class="analytic-box">
+                            <span class="an-label"><i class="fa-solid fa-clipboard-check text-indigo"></i> Monthly Review</span>
+                            <strong class="an-value" id="ai-count-review">0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Telemetry & Activity Card -->
+                <div class="content-card" style="margin-top: 24px;">
+                    <div class="card-header">
+                        <div>
+                            <h3><i class="fa-solid fa-shield-halved text-emerald"></i> AI Telemetry & Privacy Governance</h3>
+                            <p class="card-desc">Real-time aggregated endpoint performance without exposing private user conversations</p>
+                        </div>
+                        <span class="badge-pill" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald);">
+                            <i class="fa-solid fa-lock"></i> Privacy Guard Active
+                        </span>
+                    </div>
+
+                    <div class="table-responsive" style="margin-top: 16px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>AI Module</th>
+                                    <th>Status</th>
+                                    <th>Latency</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-ai-activity-tbody">
+                                <tr><td colspan="4" class="text-center text-muted">Awaiting AI telemetry stream...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: REPORTS & EXPORT -->
+            <section class="tab-pane" id="tab-reports">
+                <div class="report-export-panel">
+                    <div class="report-header-banner">
+                        <div class="banner-icon"><i class="fa-solid fa-file-csv"></i></div>
+                        <div>
+                            <h2>Platform Data Reports & Audit Exports</h2>
+                            <p>Generate, review, and export CSV reports directly from authorized Firestore records.</p>
+                        </div>
+                    </div>
+
+                    <div class="admin-reports-grid">
+                        <div class="report-option-card">
+                            <div class="r-icon"><i class="fa-solid fa-users"></i></div>
+                            <h4>User Accounts Directory</h4>
+                            <p>Complete directory of registered users with role status, currency, income, and timestamps.</p>
+                            <button class="btn btn-primary w-100" id="btn-export-users-csv">
+                                <i class="fa-solid fa-download"></i> Export Users CSV
+                            </button>
+                        </div>
+
+                        <div class="report-option-card">
+                            <div class="r-icon"><i class="fa-solid fa-receipt"></i></div>
+                            <h4>Platform Transactions Ledger</h4>
+                            <p>Comprehensive transaction log including dates, categories, payment methods, and user associations.</p>
+                            <button class="btn btn-primary w-100" id="btn-export-tx-csv">
+                                <i class="fa-solid fa-download"></i> Export Transactions CSV
+                            </button>
+                        </div>
+
+                        <div class="report-option-card">
+                            <div class="r-icon"><i class="fa-solid fa-chart-pie"></i></div>
+                            <h4>Category Breakdown Report</h4>
+                            <p>Aggregated categorical spend report detailing volume and total expenditure per category.</p>
+                            <button class="btn btn-primary w-100" id="btn-export-category-csv">
+                                <i class="fa-solid fa-download"></i> Export Categories CSV
+                            </button>
+                        </div>
+
+                        <div class="report-option-card">
+                            <div class="r-icon"><i class="fa-solid fa-vault"></i></div>
+                            <h4>Financial Health Summary</h4>
+                            <p>Platform totals for income, expenses, budgets, savings goals, and overall platform balances.</p>
+                            <button class="btn btn-primary w-100" id="btn-export-summary-csv">
+                                <i class="fa-solid fa-download"></i> Export Summary CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 6: SECURITY & AUDIT -->
+            <section class="tab-pane" id="tab-security">
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-shield-halved"></i> Security Policy & Authorization Architecture</h3>
+                    </div>
+                    <div class="security-info-grid">
+                        <div class="sec-item">
+                            <div class="sec-status-icon"><i class="fa-solid fa-circle-check text-emerald"></i></div>
+                            <div>
+                                <h4>Strict Firestore Per-User Isolation</h4>
+                                <p>Normal users can only read and write documents inside their assigned <code>users/{userId}</code> path. Unauthenticated reads and writes are blocked by security rules.</p>
+                            </div>
+                        </div>
+                        <div class="sec-item">
+                            <div class="sec-status-icon"><i class="fa-solid fa-circle-check text-emerald"></i></div>
+                            <div>
+                                <h4>Privilege Escalation Prevention</h4>
+                                <p>Security rules enforce that normal user creation and profile updates cannot alter the <code>role</code> property. Role promotion requires administrator authorization.</p>
+                            </div>
+                        </div>
+                        <div class="sec-item">
+                            <div class="sec-status-icon"><i class="fa-solid fa-circle-check text-emerald"></i></div>
+                            <div>
+                                <h4>No Client Secret Exposure</h4>
+                                <p>Firebase Admin SDK credentials and private keys are never embedded in the client applications. Authentication is handled strictly via Firebase Auth tokens.</p>
+                            </div>
+                        </div>
+                        <div class="sec-item">
+                            <div class="sec-status-icon"><i class="fa-solid fa-circle-check text-emerald"></i></div>
+                            <div>
+                                <h4>Admin Route Protection</h4>
+                                <p>The Admin Control Panel is segregated at <code>/admin</code> and guards all operations against Firestore <code>role == 'admin'</code> validation before loading any platform telemetry.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- User Details Modal -->
+    <div class="modal-overlay" id="user-details-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>User Account Details</h3>
+                <button class="btn-close" onclick="closeAdminModal('user-details-modal')">&times;</button>
+            </div>
+            <div id="user-details-content" class="user-details-body">
+                <!-- Injected dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAdminModal('user-details-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="admin-toast"></div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+# Gradle / Android Build Artifacts
+.gradle/
+build/
+app/build/
+*.apk
+*.aab
+*.ap_
+
+# Local configuration
+local.properties
+.idea/
+.idea/*
+*.iml
+.DS_Store
+
+# Crash Logs
+*.log
+hs_err_*.log
+replay_*.log
+
+# Node & Server
+server/node_modules/
+server/.env
+node_modules/
+.env
+
+# Secrets & Service Accounts
+# google-services.json
+service-account*.json

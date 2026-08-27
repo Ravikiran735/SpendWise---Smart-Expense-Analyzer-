@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 140" fill="none">
+  <defs>
+    <linearGradient id="sw-full-bg-grad" x1="10" y1="10" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1" />
+      <stop offset="50%" stop-color="#4F46E5" />
+      <stop offset="100%" stop-color="#1E1B4B" />
+    </linearGradient>
+
+    <linearGradient id="sw-full-card-teal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <linearGradient id="sw-full-card-indigo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A78BFA" />
+      <stop offset="100%" stop-color="#6366F1" />
+    </linearGradient>
+
+    <linearGradient id="sw-full-growth-grad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#38BDF8" />
+    </linearGradient>
+
+    <linearGradient id="sw-text-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+  </defs>
+
+  <!-- Left Icon Lockup (120x120) -->
+  <g transform="translate(10, 10)">
+    <!-- Container -->
+    <rect x="5" y="5" width="110" height="110" rx="28" fill="url(#sw-full-bg-grad)" />
+    <rect x="6" y="6" width="108" height="108" rx="27" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="1.5" />
+
+    <!-- Emerging Cards -->
+    <g transform="translate(5, -2)">
+      <rect x="34" y="22" width="46" height="26" rx="5" transform="rotate(-9 57 35)" fill="url(#sw-full-card-indigo)" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="1" />
+      <rect x="48" y="24" width="46" height="26" rx="5" transform="rotate(7 71 37)" fill="url(#sw-full-card-teal)" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="1" />
+    </g>
+
+    <!-- Wallet Body -->
+    <rect x="20" y="44" width="80" height="60" rx="12" fill="#0F172A" stroke="#FFFFFF" stroke-opacity="0.25" stroke-width="2" />
+    
+    <!-- 4 Bars -->
+    <rect x="30" y="80" width="7" height="16" rx="2.5" fill="#10B981" fill-opacity="0.5" />
+    <rect x="41" y="72" width="7" height="24" rx="2.5" fill="#10B981" fill-opacity="0.75" />
+    <rect x="52" y="62" width="7" height="34" rx="2.5" fill="url(#sw-full-growth-grad)" />
+    <rect x="63" y="54" width="7" height="42" rx="2.5" fill="#38BDF8" />
+
+    <!-- Trend Line -->
+    <path d="M29 76 L45 66 L56 71 L73 49" stroke="#F8FAFC" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M66 48 L75 48 L75 57 Z" fill="#F8FAFC" stroke="#F8FAFC" stroke-width="1" stroke-linejoin="round" />
+
+    <!-- Clasp -->
+    <path d="M90 66 C98 66 102 70 102 76 C102 82 98 86 90 86 Z" fill="#1E293B" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="1.5" />
+    <circle cx="94" cy="76" r="3" fill="#34D399" />
+  </g>
+
+  <!-- Right Typography Wordmark -->
+  <g transform="translate(145, 0)">
+    <text x="0" y="74" font-family="'Space Grotesk', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" font-size="52" font-weight="800" fill="#F8FAFC" letter-spacing="-1">
+      Spend<tspan fill="url(#sw-text-grad)">Wise</tspan>
+    </text>
+    
+    <!-- Subtitle -->
+    <text x="3" y="104" font-family="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#94A3B8" letter-spacing="3">
+      FINANCIAL COPILOT
+    </text>
+  </g>
+</svg>

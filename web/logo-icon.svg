@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <!-- Background Glow & Gradients -->
+    <linearGradient id="sw-bg-grad" x1="20" y1="20" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1" />
+      <stop offset="50%" stop-color="#4F46E5" />
+      <stop offset="100%" stop-color="#1E1B4B" />
+    </linearGradient>
+
+    <linearGradient id="sw-card-teal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <linearGradient id="sw-card-indigo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A78BFA" />
+      <stop offset="100%" stop-color="#6366F1" />
+    </linearGradient>
+
+    <linearGradient id="sw-growth-grad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#38BDF8" />
+    </linearGradient>
+
+    <filter id="sw-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#6366F1" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- Outer Rounded Squircle Container with Glow -->
+  <rect x="16" y="16" width="168" height="168" rx="42" fill="url(#sw-bg-grad)" filter="url(#sw-glow)" />
+
+  <!-- Inner Soft Border -->
+  <rect x="17" y="17" width="166" height="166" rx="41" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="2" />
+
+  <!-- Top Emerging Cards -->
+  <g transform="translate(10, -4)">
+    <!-- Back Purple Card -->
+    <rect x="52" y="36" width="68" height="38" rx="8" transform="rotate(-9 86 55)" fill="url(#sw-card-indigo)" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="1.5" />
+    <!-- Front Emerald Card -->
+    <rect x="74" y="38" width="68" height="38" rx="8" transform="rotate(7 108 57)" fill="url(#sw-card-teal)" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="1.5" />
+  </g>
+
+  <!-- Main Wallet/Vault Body -->
+  <g>
+    <!-- Wallet Base -->
+    <rect x="38" y="70" width="124" height="92" rx="18" fill="#0F172A" stroke="#FFFFFF" stroke-opacity="0.25" stroke-width="3" />
+    
+    <!-- Inner Glass Overlay -->
+    <rect x="42" y="74" width="116" height="84" rx="14" fill="#FFFFFF" fill-opacity="0.04" />
+
+    <!-- 4 Ascending Financial Bars -->
+    <rect x="54" y="126" width="11" height="24" rx="3.5" fill="#10B981" fill-opacity="0.5" />
+    <rect x="71" y="114" width="11" height="36" rx="3.5" fill="#10B981" fill-opacity="0.75" />
+    <rect x="88" y="98" width="11" height="52" rx="3.5" fill="url(#sw-growth-grad)" />
+    <rect x="105" y="86" width="11" height="64" rx="3.5" fill="#38BDF8" />
+
+    <!-- Upward Trend Line & Node Indicator -->
+    <path d="M52 120 L76 104 L93 112 L120 78" stroke="#F8FAFC" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+    
+    <!-- Arrowhead -->
+    <path d="M109 76 L123 76 L123 90 Z" fill="#F8FAFC" stroke="#F8FAFC" stroke-width="1.5" stroke-linejoin="round" />
+
+    <!-- Clasp / Shield Security Tab -->
+    <path d="M148 102 C158 102 164 108 164 116 C164 124 158 130 148 130 Z" fill="#1E293B" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="2.5" />
+    <circle cx="152" cy="116" r="4.5" fill="#34D399" />
+  </g>
+</svg>

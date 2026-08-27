@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpendWise — Personal Financial Decision & Planning System</title>
+    <meta name="description" content="Personal financial decision intelligence, What-If simulations, affordability assessments, habits scoring, and proactive cashflow copilot.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- SheetJS (Excel & CSV Parsing) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- Firebase Web SDK (v10 Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="alternate icon" href="favicon.svg">
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- App Container -->
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <img src="logo-icon.svg" alt="SpendWise" class="brand-logo-img">
+                <div class="brand-text">
+                    <h1>SpendWise</h1>
+                    <span id="sync-status"><i class="fa-solid fa-cloud"></i> Cloud Synced</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-link active" data-tab="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-link" data-tab="transactions">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>Transactions</span>
+                </button>
+                <button class="nav-link" data-tab="smart-import">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span>Smart Import</span>
+                    <span class="badge-pill" id="smart-import-count" style="display:none;">0</span>
+                </button>
+                <button class="nav-link" data-tab="budgets">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                    <span>Budgets</span>
+                </button>
+                <button class="nav-link" data-tab="goals">
+                    <i class="fa-solid fa-bullseye"></i>
+                    <span>Savings Goals</span>
+                </button>
+                <button class="nav-link" data-tab="insights">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Smart Insights</span>
+                    <span class="badge-pill" id="insights-count">0</span>
+                </button>
+                <button class="nav-link" data-tab="spendwise-ai">
+                    <i class="fa-solid fa-wand-magic-sparkles text-primary"></i>
+                    <span>Financial Copilot</span>
+                    <span class="badge-pill badge-ai">✨ Copilot</span>
+                </button>
+                <button class="nav-link" data-tab="reports">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <span>Reports</span>
+                </button>
+                <button class="nav-link" data-tab="profile">
+                    <i class="fa-solid fa-user"></i>
+                    <span>Profile</span>
+                </button>
+                <button class="nav-link" data-tab="settings">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="theme-switch-container">
+                    <span class="theme-label"><i class="fa-solid fa-moon"></i> Dark Mode</span>
+                    <label class="switch">
+                        <input type="checkbox" id="theme-toggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="user-profile-badge" id="user-profile-widget">
+                    <div class="avatar" id="user-avatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name" id="user-display-name">Guest User</span>
+                        <span class="user-email" id="user-display-email">Connecting...</span>
+                    </div>
+                    <button class="btn-logout-icon" id="btn-logout" title="Sign Out">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header Bar -->
+            <header class="top-header">
+                <div class="header-title">
+                    <div class="d-flex align-items-center gap-2">
+                        <h2 id="page-title">Good evening, User</h2>
+                        <span class="badge-pill badge-primary" id="header-mode-badge">SAVE MODE</span>
+                    </div>
+                    <p id="page-subtitle">Here's what matters about your money today.</p>
+                </div>
+
+                <div class="header-actions">
+                    <button class="btn btn-secondary" id="btn-voice-modal">
+                        <i class="fa-solid fa-microphone"></i>
+                        <span>Voice</span>
+                    </button>
+                    <button class="btn btn-secondary" id="btn-scan-modal">
+                        <i class="fa-solid fa-camera"></i>
+                        <span>Receipt</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="switchTab('transactions'); openTransactionModal('Income');">
+                        <i class="fa-solid fa-circle-plus text-success"></i>
+                        <span>+ Income</span>
+                    </button>
+                    <button class="btn btn-primary" id="btn-add-transaction">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>+ Expense</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Loading Spinner State -->
+            <div id="data-loading-state" class="loading-overlay" style="display:none;">
+                <div class="spinner-large"></div>
+                <p>Synchronizing with Cloud Firestore...</p>
+            </div>
+
+            <!-- ==========================================================================
+               TAB 1: COMMAND CENTER DASHBOARD
+               ========================================================================== -->
+            <section id="tab-dashboard" class="tab-pane active">
+                
+                <!-- ROW 1: DUAL SCORE & NET BALANCE HERO CARD -->
+                <div class="glass-card dual-score-balance-card mb-4">
+                    <div class="dual-score-header">
+                        <div>
+                            <span class="card-kicker">TOTAL NET BALANCE</span>
+                            <h1 class="hero-balance-val" id="hero-total-balance">₹0.00</h1>
+                        </div>
+                        <div class="dual-score-badges">
+                            <div class="score-pill score-health">
+                                <i class="fa-solid fa-shield-heart"></i>
+                                <span>Health: <strong id="dash-health-score-val">78/100</strong></span>
+                            </div>
+                            <div class="score-pill score-habits">
+                                <i class="fa-solid fa-brain"></i>
+                                <span>Habits: <strong id="dash-habit-score-val">82/100</strong></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="hero-metrics-strip mt-3">
+                        <div class="h-metric">
+                            <span>Income</span>
+                            <strong class="text-success" id="hero-income-val">+₹0.00</strong>
+                        </div>
+                        <div class="h-metric">
+                            <span>Expenses</span>
+                            <strong class="text-danger" id="hero-expense-val">-₹0.00</strong>
+                        </div>
+                        <div class="h-metric">
+                            <span>Savings</span>
+                            <strong class="text-primary" id="hero-savings-val">₹0.00</strong>
+                        </div>
+                        <div class="h-metric">
+                            <span>Savings Rate</span>
+                            <strong class="text-info" id="hero-savings-rate-val">0%</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 2: ESSENTIAL VS DISCRETIONARY & TODAY'S ACTION -->
+                <div class="dashboard-grid-2 mb-4">
+                    <!-- Essential vs Discretionary Card -->
+                    <div class="glass-card essential-card" onclick="switchTab('spendwise-ai'); openAiMode('essential');" style="cursor: pointer;">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker">SPENDING CLASSIFICATION</span>
+                                <h3>Essential vs Discretionary</h3>
+                            </div>
+                            <span class="text-primary font-weight-bold" style="font-size:0.8rem;">Details →</span>
+                        </div>
+                        <div class="essential-summary-boxes mt-2">
+                            <div class="essential-box">
+                                <span class="text-muted">ESSENTIAL (Needs)</span>
+                                <strong class="text-indigo" id="dash-essential-val">₹0.00</strong>
+                                <small id="dash-essential-pct">0% of total</small>
+                            </div>
+                            <div class="essential-box">
+                                <span class="text-muted">DISCRETIONARY (Wants)</span>
+                                <strong class="text-emerald" id="dash-discretionary-val">₹0.00</strong>
+                                <small id="dash-discretionary-pct">0% of total</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Today's Money Insight & One Action to Consider Card -->
+                    <div class="glass-card action-insight-card">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker"><i class="fa-solid fa-lightbulb text-amber"></i> TODAY'S MONEY INSIGHT</span>
+                                <p class="insight-text-quote" id="dash-today-insight">"Your spending on dining out is 18% lower than this time last month."</p>
+                            </div>
+                        </div>
+                        <div class="action-consider-box mt-2">
+                            <div class="action-desc">
+                                <strong>ONE ACTION TO CONSIDER:</strong>
+                                <p id="dash-one-action">Simulate a ₹2,000 reduction in shopping to speed up your goal.</p>
+                            </div>
+                            <button class="btn btn-sm btn-primary" onclick="switchTab('spendwise-ai'); openAiMode('simulator');">
+                                <i class="fa-solid fa-sliders"></i> Simulate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 3: FINANCIAL COPILOT HERO & SMART IMPORT -->
+                <div class="dashboard-grid-2 mb-4">
+                    <!-- SpendWise Financial Copilot Card -->
+                    <div class="glass-card copilot-hero-card">
+                        <div class="copilot-hero-top">
+                            <div class="copilot-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                            <div>
+                                <h4>SPENDWISE FINANCIAL COPILOT</h4>
+                                <p class="text-muted" style="font-size:0.85rem;">Understand your money. Plan your next move.</p>
+                            </div>
+                        </div>
+                        <div class="copilot-quick-actions mt-3">
+                            <button class="btn btn-sm btn-primary" onclick="switchTab('spendwise-ai'); openAiMode('chat');">
+                                <i class="fa-solid fa-comments"></i> Ask Copilot
+                            </button>
+                            <button class="btn btn-sm btn-secondary" onclick="switchTab('spendwise-ai'); openAiMode('simulator');">
+                                <i class="fa-solid fa-sliders"></i> What-If
+                            </button>
+                            <button class="btn btn-sm btn-secondary" onclick="switchTab('spendwise-ai'); openAiMode('affordability');">
+                                <i class="fa-solid fa-scale-balanced"></i> Can I Afford?
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Smart Import Status Card -->
+                    <div class="glass-card smart-import-hero">
+                        <div class="smart-import-hero-header">
+                            <div class="smart-import-title-group">
+                                <span class="smart-import-hero-icon"><i class="fa-solid fa-cloud-arrow-up"></i></span>
+                                <div>
+                                    <span class="card-kicker">SMART IMPORT</span>
+                                    <h4>Financial Records & Import Engine</h4>
+                                </div>
+                            </div>
+                            <span class="badge-pill badge-primary" id="dash-si-total-badge">0 Imports</span>
+                        </div>
+                        <div class="smart-import-actions-row mt-2">
+                            <button class="btn btn-sm btn-primary" onclick="switchTab('smart-import')">
+                                <i class="fa-solid fa-file-arrow-up"></i> Import Files
+                            </button>
+                            <button class="btn btn-sm btn-secondary" onclick="openModal('scan-modal')">
+                                <i class="fa-solid fa-camera"></i> Receipt
+                            </button>
+                            <button class="btn btn-sm btn-secondary" onclick="openModal('voice-modal')">
+                                <i class="fa-solid fa-microphone"></i> Voice
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 4: UPCOMING MONEY, GOAL ROADMAP, AND SPENDING LEAKS -->
+                <div class="dashboard-grid-3 mb-4">
+                    <!-- Upcoming Money -->
+                    <div class="glass-card upcoming-card" onclick="switchTab('spendwise-ai'); openAiMode('calendar');" style="cursor:pointer;">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker">UPCOMING MONEY</span>
+                                <h3>Recurring Schedule</h3>
+                            </div>
+                            <span class="text-primary font-weight-bold" style="font-size:0.8rem;">Calendar →</span>
+                        </div>
+                        <div class="upcoming-list mt-2" id="dash-upcoming-list">
+                            <p class="text-muted" style="font-size:0.85rem;">No upcoming recurring bills detected.</p>
+                        </div>
+                    </div>
+
+                    <!-- Goal Roadmap -->
+                    <div class="glass-card goal-roadmap-mini-card" onclick="switchTab('goals');" style="cursor:pointer;">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker">GOAL ROADMAP</span>
+                                <h3 id="dash-goal-title">Active Goals</h3>
+                            </div>
+                            <span class="badge-pill badge-emerald" id="dash-goal-pct">0%</span>
+                        </div>
+                        <div class="progress-bar-container mt-2">
+                            <div class="progress-bar-fill" id="dash-goal-bar" style="width: 0%;"></div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2" style="font-size:0.8rem;">
+                            <span id="dash-goal-saved">₹0 saved</span>
+                            <span class="text-primary font-weight-bold" id="dash-goal-target">Target: In 6 months</span>
+                        </div>
+                    </div>
+
+                    <!-- Spending Leaks Alert Card -->
+                    <div class="glass-card leaks-card" onclick="switchTab('spendwise-ai'); openAiMode('leaks');" style="cursor:pointer;">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker"><i class="fa-solid fa-triangle-exclamation text-amber"></i> SPENDING LEAKS</span>
+                                <h3>Micro-Purchases</h3>
+                            </div>
+                            <span class="text-primary font-weight-bold" style="font-size:0.8rem;">Manage →</span>
+                        </div>
+                        <div class="leaks-mini-list mt-2" id="dash-leaks-mini-list">
+                            <p class="text-muted" style="font-size:0.85rem;">No recurring spending leaks detected.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 5: CASHFLOW CHARTS -->
+                <div class="charts-grid command-charts-grid mb-4">
+                    <div class="glass-card chart-card chart-main">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker">CASHFLOW TRAJECTORY</span>
+                                <h3>Income vs Expenses</h3>
+                            </div>
+                            <div class="chart-time-filter" id="dashboard-trend-filters">
+                                <button class="filter-pill" data-range="7D" onclick="setDashboardTimeFilter('7D')">7D</button>
+                                <button class="filter-pill active" data-range="30D" onclick="setDashboardTimeFilter('30D')">30D</button>
+                                <button class="filter-pill" data-range="3M" onclick="setDashboardTimeFilter('3M')">3M</button>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="glass-card chart-card chart-donut">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker">WHERE YOUR MONEY GOES</span>
+                                <h3>Spending Breakdown</h3>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper donut-wrapper">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ROW 6: RECENT TRANSACTIONS LEDGER -->
+                <div class="glass-card recent-activity-card">
+                    <div class="card-header">
+                        <div>
+                            <span class="card-kicker">TRANSACTION HISTORY</span>
+                            <h3>Recent Activity</h3>
+                        </div>
+                        <button class="btn btn-sm btn-secondary" onclick="switchTab('transactions')">View All Ledger</button>
+                    </div>
+                    <div class="table-responsive mt-3">
+                        <table class="data-table" id="dashboard-recent-table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Category</th>
+                                    <th>Description</th>
+                                    <th>Date</th>
+                                    <th class="text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-recent-tbody">
+                                <!-- Injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==========================================================================
+               TAB 2: TRANSACTIONS
+               ========================================================================== -->
+            <section id="tab-transactions" class="tab-pane">
+                <div class="section-top-actions">
+                    <div>
+                        <h3>Financial Transactions Ledger</h3>
+                        <p class="section-subtitle">Complete chronological history of incomes, expenses, and imports</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-secondary" onclick="exportLedgerCsv()">
+                            <i class="fa-solid fa-file-csv"></i> Export CSV
+                        </button>
+                        <button class="btn btn-primary" onclick="openTransactionModal('Expense')">
+                            <i class="fa-solid fa-plus"></i> Add Transaction
+                        </button>
+                    </div>
+                </div>
+
+                <div class="glass-card mt-3">
+                    <div class="table-toolbar">
+                        <div class="search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="tx-search-input" placeholder="Search by description, merchant, or notes...">
+                        </div>
+                        <div class="filter-controls">
+                            <select id="tx-type-filter" class="select-dropdown">
+                                <option value="all">All Types</option>
+                                <option value="Expense">Expenses Only</option>
+                                <option value="Income">Income Only</option>
+                            </select>
+                            <select id="tx-category-filter" class="select-dropdown">
+                                <option value="all">All Categories</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table" id="transactions-table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Source</th>
+                                    <th>Category</th>
+                                    <th>Description</th>
+                                    <th>Payment Method</th>
+                                    <th>Date</th>
+                                    <th class="text-right">Amount</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactions-table-body">
+                                <!-- Injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==========================================================================
+               TAB 3: SMART IMPORT
+               ========================================================================== -->
+            <section id="tab-smart-import" class="tab-pane">
+                <div class="section-top-actions">
+                    <div>
+                        <h3><i class="fa-solid fa-cloud-arrow-up text-primary"></i> Smart Import Hub</h3>
+                        <p class="section-subtitle">Import statements, scan receipts, or record voice transactions</p>
+                    </div>
+                </div>
+
+                <div class="smart-import-cards-grid">
+                    <div class="glass-card si-action-card" id="card-import-files">
+                        <div class="si-card-top">
+                            <div class="si-card-icon bg-indigo"><i class="fa-solid fa-file-csv"></i></div>
+                            <span class="badge-pill badge-primary">CSV / Excel</span>
+                        </div>
+                        <h4>IMPORT FILES</h4>
+                        <p>Upload statements in CSV or Excel format</p>
+                        <div class="si-dropzone" id="smart-import-dropzone">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span>Drag & drop or <strong>browse</strong></span>
+                            <input type="file" id="smart-import-file-input" accept=".csv, .xlsx, .xls" style="display:none;">
+                        </div>
+                    </div>
+
+                    <div class="glass-card si-action-card" onclick="openModal('scan-modal')">
+                        <div class="si-card-top">
+                            <div class="si-card-icon bg-emerald"><i class="fa-solid fa-receipt"></i></div>
+                            <span class="badge-pill badge-emerald">OCR Engine</span>
+                        </div>
+                        <h4>SCAN RECEIPT</h4>
+                        <p>Extract merchant, amount & category from receipts</p>
+                        <button class="btn btn-secondary w-100 mt-3"><i class="fa-solid fa-camera"></i> Open Scanner</button>
+                    </div>
+
+                    <div class="glass-card si-action-card" onclick="openModal('voice-modal')">
+                        <div class="si-card-top">
+                            <div class="si-card-icon bg-amber"><i class="fa-solid fa-microphone"></i></div>
+                            <span class="badge-pill badge-amber">Speech AI</span>
+                        </div>
+                        <h4>VOICE ENTRY</h4>
+                        <p>Describe an expense naturally to log it instantly</p>
+                        <button class="btn btn-secondary w-100 mt-3"><i class="fa-solid fa-microphone"></i> Start Voice</button>
+                    </div>
+
+                    <div class="glass-card si-action-card" onclick="openTransactionModal('Expense')">
+                        <div class="si-card-top">
+                            <div class="si-card-icon bg-sky"><i class="fa-solid fa-pen-to-square"></i></div>
+                            <span class="badge-pill badge-sky">Manual</span>
+                        </div>
+                        <h4>MANUAL ENTRY</h4>
+                        <p>Add single expense or income items manually</p>
+                        <button class="btn btn-secondary w-100 mt-3"><i class="fa-solid fa-plus"></i> Add Entry</button>
+                    </div>
+                </div>
+
+                <div class="glass-card si-history-card mt-4">
+                    <div class="card-header">
+                        <div>
+                            <h3><i class="fa-solid fa-clock-rotate-left text-primary"></i> Import Ledger History</h3>
+                            <p class="card-desc">Audit trail of all statement files, receipts, and voice batches</p>
+                        </div>
+                    </div>
+                    <div class="table-responsive mt-3">
+                        <table class="data-table" id="import-history-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>File / Batch</th>
+                                    <th>Format</th>
+                                    <th>Imported</th>
+                                    <th>Duplicates</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="import-history-tbody">
+                                <!-- Injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==========================================================================
+               TAB 4: BUDGETS
+               ========================================================================== -->
+            <section id="tab-budgets" class="tab-pane">
+                <div class="section-top-actions">
+                    <div>
+                        <h3>Category Budgets & Monthly Spending Caps</h3>
+                        <p class="section-subtitle">Set monthly limits to keep your expenses strictly disciplined</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openBudgetModal()">
+                        <i class="fa-solid fa-plus"></i> Set Budget Cap
+                    </button>
+                </div>
+
+                <div class="budgets-grid mt-3" id="budgets-container">
+                    <!-- Injected by JS -->
+                </div>
+            </section>
+
+            <!-- ==========================================================================
+               TAB 5: SAVINGS GOALS
+               ========================================================================== -->
+            <section id="tab-goals" class="tab-pane">
+                <div class="section-top-actions">
+                    <div>
+                        <h3>Savings Goals & Milestones</h3>
+                        <p class="section-subtitle">Define targets, monitor milestones, and allocate monthly surplus</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openGoalModal()">
+                        <i class="fa-solid fa-plus"></i> New Savings Goal
+                    </button>
+                </div>
+
+                <div class="goals-grid mt-3" id="goals-container">
+                    <!-- Injected by JS -->
+                </div>
+            </section>
+
+            <!-- ==========================================================================
+               TAB 6: SPENDWISE FINANCIAL COPILOT HUB (12 SUB-VIEWS)
+               ========================================================================== -->
+            <section id="tab-spendwise-ai" class="tab-pane">
+                <div class="ai-hub-header glass-card">
+                    <div class="ai-hub-header-content">
+                        <div class="ai-hub-icon-wrapper">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </div>
+                        <div>
+                            <div class="ai-badge-row">
+                                <h2>SPENDWISE FINANCIAL COPILOT</h2>
+                                <span class="badge-pill badge-ai-live"><span class="pulse-dot"></span> Decision Intelligence Active</span>
+                            </div>
+                            <p class="ai-hub-subtitle">Understand your money. Plan your next move.</p>
+                        </div>
+                    </div>
+
+                    <!-- Mode Switcher Tabs (12 Sub-views) -->
+                    <div class="ai-mode-pills" id="ai-mode-tabs">
+                        <button class="ai-mode-pill active" data-mode="chat" onclick="openAiMode('chat')">
+                            <i class="fa-solid fa-comments"></i> Copilot Chat
+                        </button>
+                        <button class="ai-mode-pill" data-mode="simulator" onclick="openAiMode('simulator')">
+                            <i class="fa-solid fa-sliders"></i> What-If Simulator
+                        </button>
+                        <button class="ai-mode-pill" data-mode="affordability" onclick="openAiMode('affordability')">
+                            <i class="fa-solid fa-scale-balanced"></i> Can I Afford This?
+                        </button>
+                        <button class="ai-mode-pill" data-mode="twin" onclick="openAiMode('twin')">
+                            <i class="fa-solid fa-id-card-clip"></i> Financial Profile / Twin
+                        </button>
+                        <button class="ai-mode-pill" data-mode="habit" onclick="openAiMode('habit')">
+                            <i class="fa-solid fa-brain"></i> Money Habit Score
+                        </button>
+                        <button class="ai-mode-pill" data-mode="essential" onclick="openAiMode('essential')">
+                            <i class="fa-solid fa-layer-group"></i> Essential vs Wants
+                        </button>
+                        <button class="ai-mode-pill" data-mode="recurring" onclick="openAiMode('recurring')">
+                            <i class="fa-solid fa-repeat"></i> Recurring Money Map
+                        </button>
+                        <button class="ai-mode-pill" data-mode="leaks" onclick="openAiMode('leaks')">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Spending Leaks
+                        </button>
+                        <button class="ai-mode-pill" data-mode="roadmap" onclick="openAiMode('roadmap')">
+                            <i class="fa-solid fa-bullseye"></i> Goal Roadmap & Priority
+                        </button>
+                        <button class="ai-mode-pill" data-mode="reviews" onclick="openAiMode('reviews')">
+                            <i class="fa-solid fa-clipboard-check"></i> Reviews
+                        </button>
+                        <button class="ai-mode-pill" data-mode="forecast" onclick="openAiMode('forecast')">
+                            <i class="fa-solid fa-chart-line"></i> Forecast
+                        </button>
+                        <button class="ai-mode-pill" data-mode="calendar" onclick="openAiMode('calendar')">
+                            <i class="fa-solid fa-calendar-days"></i> Calendar & Journey
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SUB-VIEW 0: COPILOT CHAT -->
+                <div class="ai-subview active" id="ai-view-chat">
+                    <div class="ai-suggestions-container">
+                        <span class="ai-suggestions-label"><i class="fa-solid fa-bolt text-amber"></i> Suggested Questions:</span>
+                        <div class="ai-suggestion-chips" id="ai-suggestion-chips">
+                            <button class="btn-suggestion-chip" onclick="askAiQuestion('Can I afford a ₹10,000 purchase?')">Can I afford a ₹10,000 purchase?</button>
+                            <button class="btn-suggestion-chip" onclick="askAiQuestion('Why did I spend more this month?')">Why did I spend more this month?</button>
+                            <button class="btn-suggestion-chip" onclick="askAiQuestion('How can I save more money?')">How can I save more money?</button>
+                            <button class="btn-suggestion-chip" onclick="askAiQuestion('Where am I spending the most?')">Where am I spending the most?</button>
+                            <button class="btn-suggestion-chip" onclick="askAiQuestion('Simulate ₹2,000 food reduction.')">Simulate ₹2,000 food reduction</button>
+                            <button class="btn-suggestion-chip" onclick="askAiQuestion('Compare this month with last month.')">Compare this month with last month</button>
+                        </div>
+                    </div>
+
+                    <div class="glass-card ai-chat-card">
+                        <div class="ai-chat-card-header">
+                            <div class="ai-chat-status">
+                                <span class="ai-dot-online"></span>
+                                <strong>SpendWise Financial Copilot</strong>
+                                <span class="text-muted" style="font-size: 0.8rem;">• Synchronized with your real financial ledger</span>
+                            </div>
+                            <button class="btn btn-sm btn-secondary" onclick="clearAiConversation()" title="Clear conversation">
+                                <i class="fa-solid fa-trash-can"></i> Clear Chat
+                            </button>
+                        </div>
+
+                        <div class="ai-chat-messages" id="ai-chat-messages">
+                            <div class="ai-msg-row ai-msg-bot">
+                                <div class="ai-msg-avatar"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                                <div class="ai-msg-bubble">
+                                    <div class="ai-msg-header">
+                                        <span class="ai-msg-sender">Financial Copilot</span>
+                                        <span class="ai-msg-time">Just now</span>
+                                    </div>
+                                    <div class="ai-msg-body">
+                                        Hello! I am your **SpendWise Financial Copilot**. I connect your actual transactions, budgets, savings goals, and habits to help you plan your next move.
+                                        <br><br>
+                                        Ask me anything or choose a suggested scenario above!
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ai-typing-indicator" id="ai-typing-indicator" style="display: none;">
+                            <div class="ai-msg-avatar"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                            <div class="typing-dots"><span></span><span></span><span></span></div>
+                        </div>
+
+                        <div class="ai-chat-input-bar">
+                            <input type="text" id="ai-chat-input" placeholder="Ask SpendWise Financial Copilot..." onkeydown="if(event.key === 'Enter') sendUserAiMessage()">
+                            <button class="btn btn-primary btn-chat-send" onclick="sendUserAiMessage()">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-VIEW 1: WHAT-IF SIMULATOR -->
+                <div class="ai-subview" id="ai-view-simulator">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker">WHAT-IF FINANCIAL SIMULATOR</span>
+                                <h3>Hypothetical Scenario Testing</h3>
+                                <p class="card-desc">Simulate adjustments to see their exact impact on your monthly savings rate and goal timelines without changing actual records.</p>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-grid-2 mt-3">
+                            <div class="sim-card current-sim-card">
+                                <span class="text-muted">CURRENT MONTHLY SAVINGS</span>
+                                <h2 id="sim-current-savings">₹0.00</h2>
+                                <span id="sim-current-rate">0% savings rate</span>
+                            </div>
+                            <div class="sim-card projected-sim-card">
+                                <span class="text-muted">PROJECTED MONTHLY SAVINGS</span>
+                                <h2 id="sim-projected-savings" class="text-emerald">₹0.00</h2>
+                                <span id="sim-projected-improvement" class="text-primary font-weight-bold">+0.0% improvement</span>
+                            </div>
+                        </div>
+
+                        <div class="simulator-sliders-grid mt-4">
+                            <div class="sim-slider-group">
+                                <div class="d-flex justify-content-between">
+                                    <label>Reduce Food Spending</label>
+                                    <strong id="sim-val-food" class="text-primary">₹2,000/mo</strong>
+                                </div>
+                                <input type="range" min="0" max="10000" step="500" value="2000" id="slider-sim-food" oninput="handleSimulatorSliderChange()">
+                            </div>
+
+                            <div class="sim-slider-group">
+                                <div class="d-flex justify-content-between">
+                                    <label>Reduce Shopping Spending</label>
+                                    <strong id="sim-val-shopping" class="text-primary">₹1,000/mo</strong>
+                                </div>
+                                <input type="range" min="0" max="10000" step="500" value="1000" id="slider-sim-shopping" oninput="handleSimulatorSliderChange()">
+                            </div>
+
+                            <div class="sim-slider-group">
+                                <div class="d-flex justify-content-between">
+                                    <label>Increase Monthly Income</label>
+                                    <strong id="sim-val-income" class="text-emerald">+₹0/mo</strong>
+                                </div>
+                                <input type="range" min="0" max="30000" step="1000" value="0" id="slider-sim-income" oninput="handleSimulatorSliderChange()">
+                            </div>
+                        </div>
+
+                        <div class="sim-goal-shifts mt-4">
+                            <h4>Impact on Active Goal Timelines:</h4>
+                            <div id="sim-goal-shifts-list" class="mt-2">
+                                <!-- Injected by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-VIEW 2: CAN I AFFORD THIS? (PURCHASE IMPACT ANALYZER) -->
+                <div class="ai-subview" id="ai-view-affordability">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker">PURCHASE IMPACT ANALYZER</span>
+                                <h3>Can I Afford This?</h3>
+                                <p class="card-desc">Evaluate discretionary purchases against your cashflow buffer and goal completion dates.</p>
+                            </div>
+                        </div>
+
+                        <div class="affordability-form-row mt-3">
+                            <div class="form-group flex-1">
+                                <label>Purchase Amount (₹)</label>
+                                <input type="number" id="afford-amount-input" class="form-control" value="10000">
+                            </div>
+                            <div class="form-group flex-1">
+                                <label>Description / Item</label>
+                                <input type="text" id="afford-desc-input" class="form-control" value="New headphones">
+                            </div>
+                            <div class="form-group flex-1">
+                                <label>Category</label>
+                                <select id="afford-cat-input" class="select-dropdown">
+                                    <option value="Shopping">Shopping</option>
+                                    <option value="Entertainment">Entertainment</option>
+                                    <option value="Travel">Travel</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group d-flex align-items-end">
+                                <button class="btn btn-primary" onclick="evaluatePurchaseAffordability()">Evaluate Affordability</button>
+                            </div>
+                        </div>
+
+                        <div id="affordability-verdict-box" class="mt-4" style="display:none;">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-VIEW 3: FINANCIAL DIGITAL TWIN -->
+                <div class="ai-subview" id="ai-view-twin">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker">MY FINANCIAL PROFILE</span>
+                                <h3>Financial Digital Twin</h3>
+                                <p class="card-desc">Continuously updated mathematical model representing your cashflow behavior.</p>
+                            </div>
+                        </div>
+
+                        <div class="twin-scores-grid mt-3">
+                            <div class="twin-score-item">
+                                <div class="d-flex justify-content-between">
+                                    <span>Income Stability</span>
+                                    <strong id="twin-score-income">85%</strong>
+                                </div>
+                                <div class="progress-bar-container"><div class="progress-bar-fill" id="twin-bar-income" style="width: 85%;"></div></div>
+                            </div>
+                            <div class="twin-score-item">
+                                <div class="d-flex justify-content-between">
+                                    <span>Savings Discipline</span>
+                                    <strong id="twin-score-savings">80%</strong>
+                                </div>
+                                <div class="progress-bar-container"><div class="progress-bar-fill" id="twin-bar-savings" style="width: 80%;"></div></div>
+                            </div>
+                            <div class="twin-score-item">
+                                <div class="d-flex justify-content-between">
+                                    <span>Budget Discipline</span>
+                                    <strong id="twin-score-budget">75%</strong>
+                                </div>
+                                <div class="progress-bar-container"><div class="progress-bar-fill" id="twin-bar-budget" style="width: 75%;"></div></div>
+                            </div>
+                            <div class="twin-score-item">
+                                <div class="d-flex justify-content-between">
+                                    <span>Spending Stability</span>
+                                    <strong id="twin-score-spending">70%</strong>
+                                </div>
+                                <div class="progress-bar-container"><div class="progress-bar-fill" id="twin-bar-spending" style="width: 70%;"></div></div>
+                            </div>
+                        </div>
+
+                        <div class="twin-metrics-grid mt-4" id="twin-metrics-container">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-VIEW 4: MONEY HABIT SCORE -->
+                <div class="ai-subview" id="ai-view-habit">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker">BEHAVIORAL INTELLIGENCE</span>
+                                <h3>Money Habit Score (0–100)</h3>
+                                <p class="card-desc">Evaluates your behavioral patterns, recurring discipline, and impulse resistance.</p>
+                            </div>
+                        </div>
+
+                        <div class="habit-score-hero mt-3 text-center">
+                            <h1 id="habit-score-big" class="text-primary" style="font-size:3.5rem;">82</h1>
+                            <span class="badge-pill badge-primary" id="habit-score-label">GOOD MONEY HABITS</span>
+                        </div>
+
+                        <div class="habit-checklist-grid mt-4" id="habit-checklist-container">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-VIEW 5: ESSENTIAL VS DISCRETIONARY -->
+                <div class="ai-subview" id="ai-view-essential">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker">50/30/20 ANALYSIS</span>
+                                <h3>Essential vs Discretionary Spending</h3>
+                                <p class="card-desc">Automatic classification of Needs vs Wants with user customization.</p>
+                            </div>
+                        </div>
+
+                        <div id="essential-full-breakdown" class="mt-3">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-VIEW 6: RECURRING MONEY MAP -->
+                <div class="ai-subview" id="ai-view-recurring">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker">RECURRING MONEY MAP</span>
+                                <h3>Subscriptions & Committed Cashflow</h3>
+                                <p class="card-desc">Projected monthly and annual recurring commitments with Keep/Review/Cancel flags.</p>
+                            </div>
+                        </div>
+
+                        <div class="recurring-totals-strip mt-3">
+                            <div><span>Monthly Recurring Total:</span> <strong id="rec-monthly-total" class="text-primary">₹0.00</strong></div>
+                            <div><span>Annual Projected Total:</span> <strong id="rec-annual-total" class="text-danger">₹0.00</strong></div>
+                        </div>
+
+                        <div class="table-responsive mt-3">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Category</th>
+                                        <th>Frequency</th>
+                                        <th>Monthly Cost</th>
+                                        <th>Annual Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recurring-map-tbody">
+                                    <!-- Injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-VIEW 7: SPENDING LEAKS -->
+                <div class="ai-subview" id="ai-view-leaks">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker">SPENDING LEAK DETECTOR</span>
+                                <h3>Top Micro-Purchases & Leaks</h3>
+                                <p class="card-desc">Identifies repeated small transactions that accumulate into significant monthly outflows.</p>
+                            </div>
+                        </div>
+
+                        <div class="leaks-full-grid mt-3" id="leaks-full-container">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-VIEW 8: GOAL ROADMAP & PRIORITY -->
+                <div class="ai-subview" id="ai-view-roadmap">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker">GOAL ROADMAP & MULTI-GOAL PRIORITY</span>
+                                <h3>Goal Roadmap & Priority Engine</h3>
+                                <p class="card-desc">Calculated monthly contributions, projected completion dates, and multi-goal allocations.</p>
+                            </div>
+                        </div>
+
+                        <div class="roadmap-full-list mt-3" id="roadmap-full-container">
+                            <!-- Injected by JS -->
+                        </div>
+
+                        <div class="priority-engine-box mt-4">
+                            <h4>Multi-Goal Priority Distribution (Available Monthly Savings):</h4>
+                            <div id="priority-distribution-container" class="mt-2">
+                                <!-- Injected by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-VIEW 9: REVIEWS (WEEKLY & MONTH-END) -->
+                <div class="ai-subview" id="ai-view-reviews">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker">PERIODIC AUDITS</span>
+                                <h3>Weekly & Month-End Reviews</h3>
+                                <p class="card-desc">Retrospective summaries and actionable next-cycle recommendations.</p>
+                            </div>
+                        </div>
+
+                        <div class="reviews-split-grid mt-3">
+                            <div class="review-pillar-card pillar-info">
+                                <h4>WEEKLY MONEY REVIEW (Last 7 Days)</h4>
+                                <p id="weekly-review-summary" class="mt-2">Reviewing last 7 days of transactions...</p>
+                                <div class="action-highlight-box mt-2">
+                                    <strong>One Action for Next Week:</strong>
+                                    <p id="weekly-review-action">Loading action...</p>
+                                </div>
+                            </div>
+
+                            <div class="review-pillar-card pillar-success">
+                                <h4>MONTH-END REVIEW & NEXT MONTH PLAN</h4>
+                                <div id="monthend-review-content" class="mt-2">
+                                    <!-- Injected by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-VIEW 10: FINANCIAL FORECAST -->
+                <div class="ai-subview" id="ai-view-forecast">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker">NEXT MONTH ESTIMATES</span>
+                                <h3>Financial Forecast</h3>
+                                <p class="card-desc">Non-guaranteed estimates with confidence levels based on past cashflow consistency.</p>
+                            </div>
+                        </div>
+
+                        <div class="forecast-box mt-3" id="forecast-container">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-VIEW 11: CASHFLOW CALENDAR & JOURNEY -->
+                <div class="ai-subview" id="ai-view-calendar">
+                    <div class="glass-card">
+                        <div class="card-header">
+                            <div>
+                                <span class="card-kicker">TIMELINES</span>
+                                <h3>Cashflow Calendar & Money Journey</h3>
+                                <p class="card-desc">Upcoming projected events and historical financial milestones.</p>
+                            </div>
+                        </div>
+
+                        <div class="calendar-and-journey-grid mt-3">
+                            <div class="cal-col">
+                                <h4>Money Calendar (Upcoming & Records)</h4>
+                                <div id="calendar-entries-list" class="mt-2">
+                                    <!-- Injected by JS -->
+                                </div>
+                            </div>
+
+                            <div class="journey-col">
+                                <h4>Money Journey Visual Timeline</h4>
+                                <div id="journey-timeline-list" class="mt-2">
+                                    <!-- Injected by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==========================================================================
+               TAB 7: UNIFIED MONEY ALERT CENTER (INSIGHTS)
+               ========================================================================== -->
+            <section id="tab-insights" class="tab-pane">
+                <div class="section-top-actions">
+                    <div>
+                        <h3><i class="fa-solid fa-triangle-exclamation text-amber"></i> Unified Money Alert Center</h3>
+                        <p class="section-subtitle">Real-time proactive alerts for budget risks, savings opportunities, and unusual spending</p>
+                    </div>
+                </div>
+
+                <div class="alert-filter-chips mb-3">
+                    <button class="filter-pill active" data-alert-filter="all" onclick="filterMoneyAlerts('all')">All</button>
+                    <button class="filter-pill" data-alert-filter="BUDGET_RISK" onclick="filterMoneyAlerts('BUDGET_RISK')">Budget Risk</button>
+                    <button class="filter-pill" data-alert-filter="SPENDING_OPPORTUNITY" onclick="filterMoneyAlerts('SPENDING_OPPORTUNITY')">Opportunities</button>
+                    <button class="filter-pill" data-alert-filter="GOAL_MILESTONE" onclick="filterMoneyAlerts('GOAL_MILESTONE')">Milestones</button>
+                    <button class="filter-pill" data-alert-filter="UNUSUAL_SPENDING" onclick="filterMoneyAlerts('UNUSUAL_SPENDING')">Anomalies</button>
+                    <button class="filter-pill" data-alert-filter="RECURRING_EXPENSE" onclick="filterMoneyAlerts('RECURRING_EXPENSE')">Recurring</button>
+                </div>
+
+                <div class="insights-full-grid" id="insights-full-container">
+                    <!-- Injected by JS -->
+                </div>
+            </section>
+
+            <!-- ==========================================================================
+               TAB 8: REPORTS & EXPORT
+               ========================================================================== -->
+            <section id="tab-reports" class="tab-pane">
+                <div class="glass-card report-export-panel">
+                    <div class="report-header-banner">
+                        <div class="banner-icon"><i class="fa-solid fa-file-pdf"></i></div>
+                        <div>
+                            <h3>Executive Financial Statement</h3>
+                            <p>Generate a comprehensive, printable audit report or export raw CSV data.</p>
+                        </div>
+                    </div>
+
+                    <div class="report-actions-row">
+                        <button class="btn btn-primary" id="btn-print-report">
+                            <i class="fa-solid fa-print"></i> Generate & Print PDF Report
+                        </button>
+                        <button class="btn btn-secondary" id="btn-export-csv">
+                            <i class="fa-solid fa-file-csv"></i> Download CSV Data
+                        </button>
+                    </div>
+
+                    <div class="printable-report-preview" id="report-preview-area">
+                        <div class="report-card">
+                            <div class="report-top">
+                                <div>
+                                    <h2>SpendWise Financial Summary Report</h2>
+                                    <p id="report-gen-date">Generated: Today</p>
+                                </div>
+                                <div class="report-badge">CONFIDENTIAL</div>
+                            </div>
+                            <div class="report-metrics-row">
+                                <div class="r-metric">
+                                    <span>Total Income</span>
+                                    <strong id="rep-income">₹0.00</strong>
+                                </div>
+                                <div class="r-metric">
+                                    <span>Total Expenses</span>
+                                    <strong id="rep-expense">₹0.00</strong>
+                                </div>
+                                <div class="r-metric">
+                                    <span>Net Balance</span>
+                                    <strong id="rep-savings">₹0.00</strong>
+                                </div>
+                                <div class="r-metric">
+                                    <span>Savings Rate</span>
+                                    <strong id="rep-rate">0%</strong>
+                                </div>
+                            </div>
+
+                            <h4 class="report-section-title">Major Category Allocations</h4>
+                            <div id="report-categories-table"></div>
+
+                            <h4 class="report-section-title">Transaction Source Breakdown</h4>
+                            <div id="report-sources-table" style="margin-bottom: 20px;"></div>
+
+                            <h4 class="report-section-title">Key Decision Insights</h4>
+                            <div id="report-insights-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==========================================================================
+               TAB 9: USER PROFILE & ACCOUNT
+               ========================================================================== -->
+            <section id="tab-profile" class="tab-pane">
+                <div class="section-top-actions">
+                    <div>
+                        <h3><i class="fa-solid fa-user text-primary"></i> Account Profile</h3>
+                        <p class="section-subtitle">Manage personal information, security credentials, and sync status</p>
+                    </div>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- Profile Card -->
+                    <div class="glass-card settings-card">
+                        <div class="d-flex align-items-center gap-3 mb-4">
+                            <div class="avatar-large" style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent-purple)); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: #fff;">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                            <div>
+                                <h3 id="profile-display-name">SpendWise User</h3>
+                                <p class="text-muted" id="profile-display-email">user@spendwise.app</p>
+                                <span class="badge-pill badge-emerald mt-1"><i class="fa-solid fa-shield-halved"></i> Cloud Synced</span>
+                            </div>
+                        </div>
+
+                        <form id="profile-update-form" class="mt-3">
+                            <div class="form-group">
+                                <label for="profile-input-name">Full Name</label>
+                                <input type="text" id="profile-input-name" class="form-control" placeholder="Enter your full name">
+                            </div>
+                            <div class="form-group">
+                                <label for="profile-input-email">Email Address</label>
+                                <input type="email" id="profile-input-email" class="form-control" readonly disabled>
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-2">
+                                <i class="fa-solid fa-check"></i> Update Profile Name
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Security & Credentials -->
+                    <div class="glass-card settings-card">
+                        <div class="card-header">
+                            <div>
+                                <h3><i class="fa-solid fa-lock text-primary"></i> Security & Authentication</h3>
+                                <p class="card-desc">Firebase Authentication credentials and password management</p>
+                            </div>
+                        </div>
+
+                        <form id="profile-password-form" class="mt-3">
+                            <div class="form-group">
+                                <label for="profile-new-password">New Password</label>
+                                <input type="password" id="profile-new-password" class="form-control" placeholder="Minimum 8 characters">
+                            </div>
+                            <div class="form-group">
+                                <label for="profile-confirm-password">Confirm New Password</label>
+                                <input type="password" id="profile-confirm-password" class="form-control" placeholder="Repeat new password">
+                            </div>
+                            <button type="submit" class="btn btn-secondary mt-2">
+                                <i class="fa-solid fa-key"></i> Change Password
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==========================================================================
+               TAB 10: SETTINGS & PREFERENCES
+               ========================================================================== -->
+            <section id="tab-settings" class="tab-pane">
+                <div class="section-top-actions">
+                    <div>
+                        <h3><i class="fa-solid fa-gear text-primary"></i> Settings & Personalization</h3>
+                        <p class="section-subtitle">Manage Financial Mode, Primary Goal, currency, and theme</p>
+                    </div>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- Financial Mode -->
+                    <div class="glass-card settings-card">
+                        <div class="card-header">
+                            <div>
+                                <h3><i class="fa-solid fa-sliders text-primary"></i> Financial Mode</h3>
+                                <p class="card-desc">Controls how Copilot prioritizes recommendations</p>
+                            </div>
+                        </div>
+                        <div class="mode-selector-group mt-2">
+                            <button type="button" class="btn-mode-chip" data-mode="BUILD" onclick="handleFinancialModeChange('BUILD')">
+                                <strong>BUILD</strong><span>Long-Term Wealth</span>
+                            </button>
+                            <button type="button" class="btn-mode-chip" data-mode="BALANCE" onclick="handleFinancialModeChange('BALANCE')">
+                                <strong>BALANCE</strong><span>50/30/20 Lifestyle</span>
+                            </button>
+                            <button type="button" class="btn-mode-chip active" data-mode="SAVE" onclick="handleFinancialModeChange('SAVE')">
+                                <strong>SAVE</strong><span>High Savings Rate</span>
+                            </button>
+                            <button type="button" class="btn-mode-chip" data-mode="CONTROL" onclick="handleFinancialModeChange('CONTROL')">
+                                <strong>CONTROL</strong><span>Strict Budget Cap</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Primary Financial Goal -->
+                    <div class="glass-card settings-card">
+                        <div class="card-header">
+                            <div>
+                                <h3><i class="fa-solid fa-bullseye text-primary"></i> Primary Financial Goal</h3>
+                                <p class="card-desc">Copilot aligns advice with your top objective</p>
+                            </div>
+                        </div>
+                        <div class="goal-selector-group mt-2">
+                            <button type="button" class="btn-goal-chip active" data-pgoal="Save Money" onclick="handlePrimaryGoalChange('Save Money')">Save Money</button>
+                            <button type="button" class="btn-goal-chip" data-pgoal="Control Spending" onclick="handlePrimaryGoalChange('Control Spending')">Control Spending</button>
+                            <button type="button" class="btn-goal-chip" data-pgoal="Build Emergency Fund" onclick="handlePrimaryGoalChange('Build Emergency Fund')">Build Emergency Fund</button>
+                            <button type="button" class="btn-goal-chip" data-pgoal="Buy Something" onclick="handlePrimaryGoalChange('Buy Something')">Buy Something</button>
+                            <button type="button" class="btn-goal-chip" data-pgoal="Travel" onclick="handlePrimaryGoalChange('Travel')">Travel</button>
+                            <button type="button" class="btn-goal-chip" data-pgoal="Education" onclick="handlePrimaryGoalChange('Education')">Education</button>
+                        </div>
+                    </div>
+
+                    <!-- Theme & Appearance -->
+                    <div class="glass-card settings-card">
+                        <div class="card-header">
+                            <div>
+                                <h3><i class="fa-solid fa-palette text-primary"></i> Appearance & Theme</h3>
+                                <p class="card-desc">Synchronized across Android & Web</p>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div>
+                                <strong>Dark Theme</strong>
+                                <p class="text-muted" style="font-size: 0.8rem;">Glassmorphism dark mode</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="settings-theme-toggle" checked onchange="handleSettingsThemeChange(this.checked)">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Primary Currency -->
+                    <div class="glass-card settings-card">
+                        <div class="card-header">
+                            <div>
+                                <h3><i class="fa-solid fa-coins text-primary"></i> Primary Currency</h3>
+                                <p class="card-desc">Determines currency symbol across all calculations</p>
+                            </div>
+                        </div>
+                        <div class="currency-selector-group">
+                            <button type="button" class="btn-currency-chip active" data-currency="INR" onclick="handleCurrencyChange('INR')">
+                                <strong>INR (₹)</strong><span>Indian Rupee</span>
+                            </button>
+                            <button type="button" class="btn-currency-chip" data-currency="USD" onclick="handleCurrencyChange('USD')">
+                                <strong>USD ($)</strong><span>US Dollar</span>
+                            </button>
+                            <button type="button" class="btn-currency-chip" data-currency="EUR" onclick="handleCurrencyChange('EUR')">
+                                <strong>EUR (€)</strong><span>Euro</span>
+                            </button>
+                            <button type="button" class="btn-currency-chip" data-currency="GBP" onclick="handleCurrencyChange('GBP')">
+                                <strong>GBP (£)</strong><span>British Pound</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL: ADD / EDIT TRANSACTION -->
+    <div class="modal-overlay" id="tx-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="tx-modal-title">Add Transaction</h3>
+                <button class="btn-close" onclick="closeModal('tx-modal')">&times;</button>
+            </div>
+            <form id="tx-form">
+                <input type="hidden" id="tx-id">
+                
+                <div class="form-group">
+                    <label>Transaction Type</label>
+                    <div class="radio-toggle-group">
+                        <input type="radio" id="type-expense" name="tx-type" value="Expense" checked onchange="updateCategoryDropdown('Expense')">
+                        <label for="type-expense">Expense</label>
+                        <input type="radio" id="type-income" name="tx-type" value="Income" onchange="updateCategoryDropdown('Income')">
+                        <label for="type-income">Income</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="tx-amount">Amount (₹) *</label>
+                    <input type="number" step="0.01" id="tx-amount" class="form-control" required placeholder="0.00">
+                </div>
+
+                <div class="form-group">
+                    <label for="tx-category">Category *</label>
+                    <select id="tx-category" class="select-dropdown" required></select>
+                </div>
+
+                <div class="form-group">
+                    <label for="tx-desc">Description / Merchant</label>
+                    <input type="text" id="tx-desc" class="form-control" placeholder="e.g. Grocery Store, Salary, Uber">
+                </div>
+
+                <div class="form-group">
+                    <label for="tx-payment">Payment Method</label>
+                    <select id="tx-payment" class="select-dropdown">
+                        <option value="UPI">UPI</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Debit Card">Debit Card</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="tx-date">Date *</label>
+                    <input type="date" id="tx-date" class="form-control" required>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('tx-modal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-tx">Save Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: BUDGET FORM -->
+    <div class="modal-overlay" id="budget-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="budget-modal-title">Set Monthly Budget Cap</h3>
+                <button class="btn-close" onclick="closeModal('budget-modal')">&times;</button>
+            </div>
+            <form id="budget-form">
+                <input type="hidden" id="budget-id">
+                <div class="form-group">
+                    <label for="budget-category">Category</label>
+                    <select id="budget-category" class="select-dropdown"></select>
+                </div>
+                <div class="form-group">
+                    <label for="budget-amount">Monthly Cap (₹)</label>
+                    <input type="number" id="budget-amount" class="form-control" required placeholder="5000">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('budget-modal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Budget</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: GOAL FORM -->
+    <div class="modal-overlay" id="goal-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="goal-modal-title">Set Savings Goal</h3>
+                <button class="btn-close" onclick="closeModal('goal-modal')">&times;</button>
+            </div>
+            <form id="goal-form">
+                <input type="hidden" id="goal-id">
+                <div class="form-group">
+                    <label for="goal-title">Goal Name</label>
+                    <input type="text" id="goal-title" class="form-control" placeholder="e.g. New Laptop, Emergency Fund" required>
+                </div>
+                <div class="form-group">
+                    <label for="goal-target">Target Amount (₹)</label>
+                    <input type="number" id="goal-target" class="form-control" required placeholder="50000">
+                </div>
+                <div class="form-group">
+                    <label for="goal-current">Current Savings (₹)</label>
+                    <input type="number" id="goal-current" class="form-control" value="0">
+                </div>
+                <div class="form-group">
+                    <label for="goal-date">Target Date (Optional)</label>
+                    <input type="date" id="goal-date" class="form-control">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('goal-modal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Goal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: VOICE ENTRY -->
+    <div class="modal-overlay" id="voice-modal">
+        <div class="modal-card text-center">
+            <div class="modal-header">
+                <h3>Voice Expense Logger</h3>
+                <button class="btn-close" onclick="closeModal('voice-modal')">&times;</button>
+            </div>
+            <div class="voice-box">
+                <button class="voice-mic-btn" id="voice-mic-trigger">
+                    <i class="fa-solid fa-microphone"></i>
+                </button>
+                <p id="voice-status-text" class="voice-status">Tap microphone and speak</p>
+                <div class="voice-examples">
+                    <span>Try saying:</span>
+                    <code>"Spent 450 rupees on food for lunch"</code>
+                    <code>"Paid 1200 for transport taxi"</code>
+                    <code>"Received 50000 salary"</code>
+                </div>
+                <div class="voice-result-box" id="voice-result-preview" style="display:none;">
+                    <h4>Recognized Command:</h4>
+                    <p id="voice-transcript-text" class="transcript-highlight"></p>
+                    <button class="btn btn-primary" id="btn-voice-apply">Fill Into Transaction Form</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: SCAN RECEIPT -->
+    <div class="modal-overlay" id="scan-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Scan Receipt / Invoice</h3>
+                <button class="btn-close" onclick="closeModal('scan-modal')">&times;</button>
+            </div>
+            <div class="scanner-dropzone" id="scanner-dropzone">
+                <i class="fa-solid fa-cloud-arrow-up drop-icon"></i>
+                <h4>Upload Receipt Image</h4>
+                <p>Drag & drop image or click to browse</p>
+                <input type="file" id="receipt-file-input" accept="image/*" style="display:none;">
+            </div>
+            <div id="scan-progress-box" style="display:none;" class="text-center">
+                <div class="spinner"></div>
+                <p>Analyzing receipt text with OCR engine...</p>
+            </div>
+            <div id="scan-result-box" style="display:none;" class="scan-extracted-card">
+                <h4>Extracted Receipt Details:</h4>
+                <div class="extracted-fields">
+                    <div><strong>Detected Total:</strong> <span id="ocr-amount">₹0.00</span></div>
+                    <div><strong>Merchant / Note:</strong> <span id="ocr-desc">N/A</span></div>
+                </div>
+                <button class="btn btn-primary w-100" id="btn-apply-ocr">Auto-Populate Transaction</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: AUTHENTICATION (LOGIN / REGISTER) -->
+    <div class="modal-overlay" id="auth-modal">
+        <div class="modal-card auth-modal-card">
+            <div class="modal-header text-center d-flex flex-column align-items-center">
+                <img src="logo-icon.svg" alt="SpendWise Logo" class="auth-logo mb-2" style="width: 56px; height: 56px;">
+                <h2 style="font-size: 1.4rem; font-weight: 800;">SpendWise</h2>
+                <p id="auth-subtitle" class="text-muted" style="font-size: 0.85rem;">Personal Financial Decision & Planning System</p>
+                <button class="btn-close" onclick="closeModal('auth-modal')" style="position: absolute; right: 16px; top: 16px;">&times;</button>
+            </div>
+
+            <div class="auth-tab-bar mb-3" id="auth-tab-bar" style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                <button class="btn btn-sm btn-secondary active flex-1" id="tab-btn-login">Sign In</button>
+                <button class="btn btn-sm btn-secondary flex-1" id="tab-btn-register">Create Account</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="auth-login-form" class="auth-form active">
+                <div class="form-group">
+                    <label for="login-email">Email Address</label>
+                    <input type="email" id="login-email" class="form-control" placeholder="user@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" class="form-control" placeholder="Enter your password" required>
+                </div>
+                <p id="login-error-msg" class="text-danger mb-2" style="display: none; font-size: 0.85rem;"></p>
+                <button type="submit" class="btn btn-primary w-100" id="btn-submit-login">
+                    <span class="btn-text">Sign In to SpendWise</span>
+                    <span class="btn-spinner" style="display: none;"><i class="fa-solid fa-spinner fa-spin"></i></span>
+                </button>
+                <div class="text-center mt-3">
+                    <button type="button" class="btn-link text-muted" id="btn-forgot-password" style="font-size: 0.82rem; background: none; border: none; cursor: pointer;">Forgot password?</button>
+                </div>
+            </form>
+
+            <!-- Register Form -->
+            <form id="auth-register-form" class="auth-form" style="display: none;">
+                <div class="form-group">
+                    <label for="reg-name">Full Name</label>
+                    <input type="text" id="reg-name" class="form-control" placeholder="Your Name" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg-email">Email Address</label>
+                    <input type="email" id="reg-email" class="form-control" placeholder="user@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">Create Password</label>
+                    <input type="password" id="reg-password" class="form-control" placeholder="Minimum 8 characters" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg-confirm-password">Confirm Password</label>
+                    <input type="password" id="reg-confirm-password" class="form-control" placeholder="Repeat password" required>
+                </div>
+                <p id="register-error-msg" class="text-danger mb-2" style="display: none; font-size: 0.85rem;"></p>
+                <button type="submit" class="btn btn-primary w-100" id="btn-submit-register">
+                    <span class="btn-text">Create Free Account</span>
+                    <span class="btn-spinner" style="display: none;"><i class="fa-solid fa-spinner fa-spin"></i></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="app-toast"></div>
+
+    <!-- Logic Scripts -->
+    <script src="duplicateDetector.js"></script>
+    <script src="transactionCategorizer.js"></script>
+    <script src="importAnalyzer.js"></script>
+    <script src="smartImport.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
