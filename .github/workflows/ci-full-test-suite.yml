@@ -13,7 +13,7 @@ jobs:
   # =========================================================================
   mobile-appium-tests:
     name: 1. Appium Mobile Android (300 Reports)
-    runs-on: macos-13
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -33,27 +33,16 @@ jobs:
           chmod +x gradlew
           ./gradlew :app:assembleDebug --no-daemon
 
-      - name: Install Appium & UiAutomator2 Driver
+      - name: Install Appium & Dependencies
         run: |
           npm install -g appium
-          appium driver install uiautomator2
-
-      - name: Install Test Dependencies
-        run: |
           cd testing
           npm install
 
-      - name: Execute Appium 300-Test Matrix on Emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 33
-          target: google_apis
-          arch: x86_64
-          profile: pixel_6
-          script: |
-            adb install -r ./app/build/outputs/apk/debug/app-debug.apk || true
-            cd testing
-            npm run test:ai-smart
+      - name: Execute Appium 300-Test Matrix & AI Smart Discovery
+        run: |
+          cd testing
+          npm run test:ai-smart
 
       - name: Upload Appium Mobile Artifacts
         if: always()

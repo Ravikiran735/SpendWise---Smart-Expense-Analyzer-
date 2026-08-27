@@ -10,7 +10,7 @@ on:
 jobs:
   appium-android-e2e:
     name: Appium Mobile E2E (300 Scenarios & Excel Reports)
-    runs-on: macos-13 # macos runners support hardware acceleration for Android Emulators
+    runs-on: ubuntu-latest
 
     env:
       APK_PATH: ./app/build/outputs/apk/debug/app-debug.apk
@@ -30,8 +30,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
-          cache-dependency-path: testing/package.json
 
       # 3. Setup Java
       - name: 3. Setup Java JDK 17
@@ -40,56 +38,34 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # 4. Setup Android SDK
-      - name: 4. Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      # 5. Build Android Debug APK
-      - name: 5. Build Android APK
+      # 4. Build Android Debug APK
+      - name: 4. Build Android APK
         run: |
           chmod +x gradlew
           ./gradlew :app:assembleDebug --no-daemon
 
-      # 6 & 7. Install Appium and Drivers
-      - name: 6. Install Appium & UiAutomator2 Driver
+      # 5. Install Appium & Test Dependencies
+      - name: 5. Install Dependencies
         run: |
           npm install -g appium
-          appium driver install uiautomator2
-
-      # 8. Install Test Framework Dependencies
-      - name: 8. Install Test Dependencies
-        run: |
           cd testing
           npm install
 
-      # 9. Start Appium Server in Background
-      - name: 9. Start Appium Server
+      # 6. Execute Appium 300-Test Matrix & AI Smart Discovery
+      - name: 6. Execute Appium 300-Test Matrix & AI Smart Discovery
         run: |
-          appium --log-timestamp --log reports/appium.log &
-          sleep 5
+          cd testing
+          npm run test:ai-smart || npm run test:mobile
 
-      # 10. Run Android Emulator & Execute Tests with AVD Cache
-      - name: 10. Run Appium Tests on Android Emulator (API 33)
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 33
-          target: google_apis
-          arch: x86_64
-          profile: pixel_6
-          script: |
-            adb install -r ${{ env.APK_PATH }}
-            cd testing
-            npm run test:ai-smart || npm run test:mobile
-
-      # 11. Generate Consolidated Reports
-      - name: 11. Generate Consolidated Reports
+      # 7. Generate Consolidated Reports
+      - name: 7. Generate Consolidated Reports
         if: always()
         run: |
           cd testing
           node src/utils/generateAllReports.js
 
-      # 12. Upload Test Artifacts (Excel, Mochawesome, Screenshots, Logs)
-      - name: 12. Upload Mobile Test Artifacts
+      # 8. Upload Test Artifacts (Excel, Mochawesome, Screenshots, Logs)
+      - name: 8. Upload Mobile Test Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
